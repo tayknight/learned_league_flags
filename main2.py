@@ -2,6 +2,7 @@ import configparser
 import math
 import os
 import pickle
+import re
 import requests
 import shutil
 import textwrap 
@@ -93,32 +94,6 @@ def get_session():
     ses1.post(loginfile, data=payload)
     return ses1
 
-def get_season_csv(session=get_session(), season=MAX_SEASON):
-    """
-    Read a csv file pointed to by a url.  Return a list of lines.  Each
-    line is a list of fields.
-    """
-    main_data = session.get(LLALLCSV.format(SEASON_NUM=season))
-    retval = main_data.content
-    #flines = main_data.text.strip().split('\n')
-    #retval = []
-    #for peep in flines[1:]:
-    #    newpeep = peep.split(',')
-    #    retval.append(newpeep[1:])
-
-    if retval[0:16] != b'<b>[phpBB Debug]':
-        with open(Path('csv', 'season_{}.csv'.format(season)), 'wb') as f:
-            f.write(retval)
-
-    return 'season_{}.csv'.format(season)
-
-def read_csv(season=MAX_SEASON):
-    players_df = pd.read_csv(Path('csv', 'season_{}.csv'.format(season))
-        , sep=','
-        , encoding = "ISO-8859-1"
-    )
-    return players_df
-
 def get_page_data(url, parser, session=get_session()):
     main_data = session.get(url)
     # Good response?
@@ -132,41 +107,65 @@ def get_page_data(url, parser, session=get_session()):
 
 session = get_session()
 
-# The past season's CSV shouldn't change. After they've been downloaded
-# there should be any reason to download them again.
-if DOWNLOAD_CSV:
-    season_num = 1
-    while season_num <= MAX_SEASON:
-        csv = get_season_csv(session=session, season=season_num)
-        season_num += 1
+# Get and parse scripts/playerdata.js
+playerdata = session.get(f'{LLHEADER}/scripts/playerdata.js')
 
-# Process the player from the CSV files.
-# create empty dataframe to hold the list of players from the CSV files.
-all_players = []
+if playerdata.status_code == 200:
+    sections = playerdata.text
 
-# reset season_num
-season_num = 1
-while season_num <= MAX_SEASON:
-    # Not every season has a CSV file.
-    if Path('csv', 'season_{}.csv'.format(season_num)).exists():
-        df = read_csv(season=season_num)
-        if 'Player' in df.columns:
-            # Extract only the Player column from the dataframe and append
-            # it to the list created above.
-            all_players.extend(df['Player'].tolist())
-    season_num += 1
+    regex = r"\(\n(.+?\)+);"
+    matches = re.finditer(regex, sections, re.DOTALL)
+    match_parse = {
+        1: 'playerNames'
+        , 2: 'playerLinks'
+        , 3: 'playerDescriptions'
+        , 4: 'playerFlags'
+    }
+    
+    for match_num, match in enumerate(matches, start=1):
+        # 1 group per match (hope this doesn't change):
+        for group_num in range(0, len(match.groups())):
+            group_num = group_num + 1
+            if match_parse[match_num] == 'playerNames':
+                raw_player_names = match.group(group_num).split('\n')
+            elif match_parse[match_num] == 'playerLinks':
+                raw_player_links = match.group(group_num).split('\n')
+            elif match_parse[match_num] == 'playerDescriptions':
+                raw_player_descriptions = match.group(group_num).split('\n')
+            elif match_parse[match_num] == 'playerFlags':
+                # as of the end of LL82 this is empty
+                raw_player_flags = match.group(group_num).split('\n')
+            else:
+                print('Couldn\'t find data structures in scripts/playerdata.js')
 
-# Get a unique list of player names.
-unique_players = np.unique(np.array(all_players))
+players = []
+player_links = []
+player_descriptions = []
+player_flags = []
 
-# for each player in unique players...
-limit = 100
+for player_name in raw_player_names:
+    players.append(player_name.strip('"').strip(','))
+
+for player_link in raw_player_links:
+    player_links.append(player_link.strip('"').strip(','))
+
+for player_description in raw_player_descriptions:
+    player_descriptions.append(player_description.strip('"').strip(','))
+
+# for player_flag in raw_player_flags:
+#    player_flags.append(player_flag.strip('"').strip(','))
+
+player_count = len(players)
+player_list = []
 i = 0
-for player in unique_players:
-    if i < 100:
-        # go fetch the player's profile page.
-        page = "%s/profiles.php?%s" % (LLHEADER, player.lower())
-        person = GetPersonalFlag(person)
-        i += 1
+while i < player_count:
+    this_player = {}
+    player_list.append(
+        {
+            'player_name': players[i]
+            , 'player_link': player_links[i]
+            , 'player_description': player_descriptions[i]
+        }
+    )
+    i += 1
 
-print(len(unique_players))
