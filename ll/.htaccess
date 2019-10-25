@@ -1,0 +1,9 @@
+Options +FollowSymLinks -MultiViews
+
+# Turn mod_rewrite on
+RewriteEngine On
+
+RewriteCond %{REQUEST_URI} ^/ll/index\.html$
+RewriteCond %{QUERY_STRING} ^page=([0-9]*)
+RewriteRule ^(.*)$ http://willwyatt.com/ll/flag_%1.html [P]
+
