@@ -142,7 +142,7 @@ def get_page_data(url, parser, session=get_session()):
         return parser1.result
     else:
         r = main_data.response
-        print(f'Problem parsing {url}.')
+        print(f'Problem parsing {url}. {r}')
         return None
 
 def log_result(retval):
@@ -343,7 +343,7 @@ if __name__ == "__main__":
         this_batch = (time() - ts)
         print(f'Batch: {batch_count} of {total_batches}. Fetching {FETCH_BATCH} image URLs in: {this_batch}')
 
-        print('fetched'.format(len(results)))
+        print('fetched{}'.format(len(results)))
 
         # Pickle these complete player objects.
         with open(Path('pickles', 'members.pkl'), 'wb') as f:
