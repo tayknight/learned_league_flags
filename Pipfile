@@ -6,9 +6,9 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-llama-slobber = "*"
 requests = "*"
 pandas = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.7"

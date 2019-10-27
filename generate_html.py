@@ -5,32 +5,35 @@ import pickle
 import re
 import requests
 import shutil
-import textwrap 
-import multiprocessing as mp
+import sys
+import textwrap
+#import multiprocessing as mp
 
 from html.parser import HTMLParser
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError
+from time import time, sleep
 
 import numpy as np
-import pandas as pd
 
 LLHEADER = 'https://www.learnedleague.com'
 LLALLCSV = 'https://www.learnedleague.com/lgwide.php?{SEASON_NUM}'
 LOGINFILE = LLHEADER + '/ucp.php?mode=login'
 INPUTDATA = 'logindata.ini'
-DOWNLOAD_CSV = False
 
-USE_PLAYERDATA_PICKLES = True
-MAX_SEASON = 82
-
-USE_FLAGDATA_PICKLES = True
+FETCH_PLAYERDATA = True
+FETCH_FLAGDATA = True
+FETCH_BATCH = 1000
+FETCH_SLEEP = 3
 
 # If LIMIT_FETCH is try then only LIMIT_FETCH_COUNT number of member
 # data will be fetched.
-LIMIT_FETCH = True
-LIMIT_FETCH_COUNT = 100
+LIMIT_FETCH = False
+LIMIT_FETCH_COUNT = 163
+
+NUMBER_OF_PAGES = 20
 
 class GetPersonalFlag(HTMLParser):
     """
@@ -62,7 +65,7 @@ class GetPersonalFlag(HTMLParser):
 
                         # Remember that we are processing within a href tag.
                         self.inhref = True
-        
+
         if tag == 'img':
             # If we are processing with the href tag that has already been processed.
             if self.inhref:
@@ -128,7 +131,7 @@ def fetch_player(session=get_session(), player=None, header=LLHEADER):
     flag = get_page_data(page, GetPersonalFlag(), session=session)
     if 'flag_src' in flag:
         player['player_flag'] = flag['flag_src']
-    
+
     return player
 
 if __name__ == "__main__":
@@ -136,14 +139,14 @@ if __name__ == "__main__":
     session = get_session()
     #session.mount(LLHEADER, ll_adapter)
 
-    # Get and parse scripts/playerdata.js
-    try:
-        playerdata = session.get(f'{LLHEADER}/scripts/playerdata.js')
-    except ConnectionError as ce:
-        print(ce)
-
-    if not USE_PLAYERDATA_PICKLES:
+    if FETCH_PLAYERDATA == True:
+        # Get and parse scripts/playerdata.js
+        try:
+            playerdata = session.get(f'{LLHEADER}/scripts/playerdata.js')
+        except ConnectionError as ce:
+            print(ce)
         if playerdata.status_code == 200:
+            playerdata.encoding = 'utf-8'
             sections = playerdata.text
 
             regex = r"\(\n(.+?\)+);"
@@ -154,7 +157,7 @@ if __name__ == "__main__":
                 , 3: 'playerDescriptions'
                 , 4: 'playerFlags'
             }
-            
+
             for match_num, match in enumerate(matches, start=1):
                 # 1 group per match (hope this doesn't change):
                 for group_num in range(0, len(match.groups())):
@@ -177,13 +180,13 @@ if __name__ == "__main__":
         player_flags = []
 
         for player_name in raw_player_names:
-            players.append(player_name.strip('"').strip(',').strip('\''))
+            players.append(player_name.replace('"', '').replace(',', '').replace('\'', ''))
 
         for player_link in raw_player_links:
-            player_links.append(player_link.strip('"').strip(',').strip('\''))
+            player_links.append(player_link.replace('"', '').replace(',', '').replace('\'', ''))
 
         for player_description in raw_player_descriptions:
-            player_descriptions.append(player_description.strip('"').strip(',').strip('\''))
+            player_descriptions.append(player_description.replace('"', '').replace(',', '').replace('\'', ''))
 
         # for player_flag in raw_player_flags:
         #    player_flags.append(player_flag.strip('"').strip(','))
@@ -202,31 +205,102 @@ if __name__ == "__main__":
                 }
             )
             i += 1
-        
-        with open(f'raw_members.pkl', 'wb') as f:
+
+        with open(Path('pickles', 'raw_members.pkl'), 'wb') as f:
             pickle.dump(player_list, f)
 
-    with open(f'pickles/raw_members.pkl', 'rb') as f:
-        player_list = (pickle.load(f))
+    if Path('pickles', 'raw_members.pkl').is_file():
+        with open('pickles/raw_members.pkl', 'rb') as f:
+            player_list = (pickle.load(f))
+    else:
+        print('pickles/raw_members.pkl not found. Change FETCH_PLAYERDATA to True.')
+        sys.exit(0)
 
     # for each parsed player in playerdata.js...
     if LIMIT_FETCH:
         player_list = player_list[0:LIMIT_FETCH_COUNT]
 
-    if not USE_FLAGDATA_PICKLES:
+    if FETCH_FLAGDATA == True:
         results = []
-        pool = mp.Pool(processes=4)
-        for player in player_list:
-            pool.apply_async(fetch_player, args=(session, player, LLHEADER ), callback=log_result)
-        pool.close()    
+        small_results = []
+        #pool = mp.Pool(processes=4)
+        ts = time()
+
+        i = 0
+        small_list = []
+        batch_count = 1
+        total_batches = math.floor((len(player_list) / FETCH_BATCH))
+
+        while i < len(player_list):
+            small_list.append(player_list[i])
+            if len(small_list) % FETCH_BATCH == 0:
+                pool = ThreadPool(5)
+
+                for player in small_list:
+                    small_results.append(pool.apply_async(fetch_player, args=(session, player, LLHEADER )))
+                pool.close()
+                pool.join()
+                for r in small_results:
+                    results.append(r.get())
+
+                this_batch = (time() - ts)
+                print(f'Batch: {batch_count} of {total_batches}. Fetching {FETCH_BATCH} image URLs in: {this_batch}')
+                # Try to play nice...
+                sleep(FETCH_SLEEP)
+                ts = time()
+                # Ready for next batch.
+                batch_count += 1
+                small_list = []
+                small_results = []
+            i += 1
+
+        # clean up any left over after last small_list
+        pool = ThreadPool(5)
+        for player in small_list:
+            small_results.append(pool.apply_async(fetch_player, args=(session, player, LLHEADER )))
+        pool.close()
         pool.join()
+        for r in small_results:
+            results.append(r.get())
 
-        # Pickle these objects
-        with open(f'pickles/members.pkl', 'wb') as f:
+        this_batch = (time() - ts)
+        print(f'Batch: {batch_count} of {total_batches}. Fetching {FETCH_BATCH} image URLs in: {this_batch}')
+
+        print(len(results))
+        print('fetched')
+
+
+        with open(Path('pickles', 'members.pkl'), 'wb') as f:
             pickle.dump(results, f)
-    
-    # load member data
-    with open(f'pickles/members.pkl', 'rb') as f:
-        member_data = pickle.load(f)
 
-    print('done')
+    # load member data
+    if Path('pickles', 'members.pkl').is_file():
+        with open(f'pickles/members.pkl', 'rb') as f:
+            member_data = pickle.load(f)
+    else:
+        print('pickes/members.pkl not found. Change FETCH_FLAGDATA to True.')
+
+    # Generate players.js file.
+    print('Generating js/players.js file.')
+    player_js_output = 'var members = [];\n'
+    page_counter = 1
+    members_per_page = math.floor(len(member_data)/NUMBER_OF_PAGES)
+    i = 0
+    member_counter = 1
+    for member in member_data:
+        memberName = member['player_name']
+        memberProfile = LLHEADER + member['player_link']
+        if member['player_flag'] == None:
+            flagUrl = ''
+        else:
+            flagUrl = LLHEADER + member['player_flag']
+        if i > members_per_page:
+            page_counter += 1
+            i = 0
+        else:
+            i += 1
+        player_js_output += f"members.push({{'memberCounter': {member_counter}, 'page': {page_counter}, 'memberLink': '{memberProfile}', 'memberName': '{memberName}', 'flagUrl': '{flagUrl}'}});\n"
+        member_counter += 1
+
+    with open(Path('ll', 'js', 'players.js'), 'w', encoding="utf-8") as f:
+        f.write(player_js_output)
