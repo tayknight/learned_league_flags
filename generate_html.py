@@ -22,6 +22,8 @@ LLALLCSV = 'https://www.learnedleague.com/lgwide.php?{SEASON_NUM}'
 LOGINFILE = LLHEADER + '/ucp.php?mode=login'
 INPUTDATA = 'logindata.ini'
 
+# Member and Player used interchangeably througout.
+
 # Fetch the playerdata.js file from learnedleague.com.
 # This is list from which the html is built.
 # The piece of code below that pays attention to this
