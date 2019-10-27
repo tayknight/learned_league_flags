@@ -1,4 +1,5 @@
 function GetURLParameter(sParam) {
+    // The page number might be passed in as a URL query object.
     var sPageURL = window.location.search.substring(1);
     var sURLVariables = sPageURL.split('&');
     for (var i = 0; i < sURLVariables.length; i++)
@@ -12,12 +13,16 @@ function GetURLParameter(sParam) {
 }
 
 function GetPageNum() {
+    // Get the page number. The flag loading function needs to
+    // know what page to process.
     var found_page = 1;
     var urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('page')) {
+        // The url might look like index.html?page=10
         found_page = GetURLParameter('page');
     }
     else {
+        // or the url might look like .../flags/10
         var urlHref = window.location.href;
         parts = urlHref.split('/');
         if ($.isNumeric(parts[(parts.length)-1]) == true) {
@@ -29,6 +34,8 @@ function GetPageNum() {
 }
 
 function GetPageMembers(pageNum) {
+    // Parse the players.js object to find all members
+    // on a particular page.
     var results = $.map(members, function(e){
         if( e.page == pageNum ) return e;
     });
@@ -36,6 +43,8 @@ function GetPageMembers(pageNum) {
 }
 
 function GetFirstAndLast() {
+    // Get the first and last players of each page of players.
+    // This is used to generate the menu and the page header.
     max_member = members.length;
     this_member = members[max_member - 1];
     max_page = this_member['page'];
@@ -51,6 +60,7 @@ function GetFirstAndLast() {
 }
 
 function BuildPageDescription() {
+    // Build the header above the list of flags.
     page_num = GetPageNum();
     fl = GetFirstAndLast();
     first_name = fl[page_num - 1]['first']['memberName'];
@@ -59,6 +69,8 @@ function BuildPageDescription() {
 }
 
 function BuildFlags(results) {
+    // Build the list of flags.
+    // This is straight HTML that will be appeneded to the target HTML object.
     var col_counter = 1;
     var flags_string = '\t<div class="row">\n';
     $.each(results, function(index, value){
@@ -80,6 +92,8 @@ function BuildFlags(results) {
 }
 
 function BuildMenu() {
+    // Build the page menu.
+    // This is HTML that is appended to the page_menu object.
     menu_members = GetFirstAndLast();
     toc_string = '';
     for(i=1; i <= menu_members.length; i++) {
@@ -91,11 +105,15 @@ function BuildMenu() {
 }
 
 function DrawFlags() {
+    // Find the page of flags to show.
     found_page = GetPageNum();
+
     // Extract members of this page.
     results = GetPageMembers(found_page);
 
+    // Append the html to the target html id.
     flags_container = $('#flags');
     results_string = BuildFlags(results);
     flags_container.append(results_string);
 }
+
