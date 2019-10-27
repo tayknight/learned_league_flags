@@ -20,7 +20,7 @@ pipenv install
 ```
 
 ### Installing
-Change the member name and password in logindata.ini.example and rename to logindata.ini.
+Change the member name and password in logindata.ini.example and rename to logindata.ini. If you don't want Google Analytics tracking completely remove the Google line.
 
 Run the python script in the folder where this is cloned.
 

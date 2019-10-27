@@ -109,6 +109,18 @@ class GetPersonalFlag(HTMLParser):
                                     # Set the found person so no more tags are processed.
                                     self.found_person = True
 
+def get_ga_code():
+    """Gets the Google Analytics code if it exists in the logindata.ini file.
+    """
+    config = configparser.ConfigParser()
+    config.read(INPUTDATA)
+    try:
+        google = config['DEFAULT']['google']
+    except KeyError:
+        google = None
+    return google
+
+
 def get_session():
     """
     Read an ini file, establish a login session
@@ -383,5 +395,17 @@ if __name__ == "__main__":
     # Write the completd player.js file.
     with open(Path('ll', 'js', 'players.js'), 'w', encoding="utf-8") as f:
         f.write(player_js_output)
+
+    # Write the Google analytics tracking file.
+    print('Generating js/ga.js file.')
+    ga_code = get_ga_code()
+    if ga_code:
+        with open(Path('ga.html'), 'r', encoding="utf-8") as f:
+            g = f.read()
+        g = g.format(GA_CODE=ga_code)
+    else:
+        g = '// not used.'
+    with open(Path('ll', 'js', 'ga.js'), 'w', encoding="utf-8") as f:
+        f.write(g)
 
     print('Done.')

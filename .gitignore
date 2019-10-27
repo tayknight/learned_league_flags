@@ -4,9 +4,9 @@ images/
 .vscode/
 output/*
 csv/*
+ll/*
 logindata.ini
 *.pkl
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
