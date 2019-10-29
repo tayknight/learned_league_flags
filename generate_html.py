@@ -15,6 +15,9 @@ from pathlib import Path
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError
 from requests.exceptions import HTTPError
+
+/# https://dev.to/ssbozy/python-requests-with-retries-4p03
+from requests.packages.urllib3.util.retry import Retry
 from time import time, sleep
 
 import numpy as np
@@ -88,6 +91,10 @@ class FetchAndParseMembers:
     LIMIT_FETCH_COUNT = 163
     NUMBER_OF_PAGES = 20
     FETCH_IMAGES = False
+
+    def requests_retry_session (
+
+    )
 
     def get_ga_code(self):
         """Gets the Google Analytics code if it exists in the logindata.ini file.
@@ -256,7 +263,6 @@ def main():
         players = []
         player_links = []
         player_descriptions = []
-        player_flags = []
 
         # Clean up the elements matched.
         # TODO: Clean these up in the regex.
@@ -276,7 +282,6 @@ def main():
         player_list = []
         i = 0
         while i < player_count:
-            this_player = {}
             player_list.append(
                 {
                     'player_name': players[i]
@@ -381,7 +386,7 @@ def main():
         this_batch = (time() - ts)
         print(f'Batch: {batch_count} of {total_batches}. Fetching {ll.FETCH_BATCH} image URLs in: {this_batch}')
 
-        print('fetched{}'.format(len(results)))
+        print('Fetched {fetched}.'.format(len(results)))
 
         # Pickle these complete player objects.
         with open(Path('pickles', 'members.pkl'), 'wb') as f:
@@ -482,7 +487,7 @@ def main():
 
                 # How long did this batch take?
                 this_batch = (time() - ts)
-                print(f'Batch: {batch_count} of {total_batches}. Fetching {ll.FETCH_BATCH} image URLs in: {this_batch}')
+                print(f'Batch: {batch_count} of {total_batches}. Fetching {ll.FETCH_BATCH} images in: {this_batch}')
                 # Try to play nice...
                 sleep(ll.FETCH_SLEEP)
 
