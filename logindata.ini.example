@@ -2,3 +2,42 @@
 username = LLMemberName
 password = Password
 google=UA-XXXXXXX-Y
+
+
+LLHEADER=https://www.learnedleague.com
+
+# Fetch the playerdata.js file from learnedleague.com.
+# This is list from which the html is built.
+# The piece of code below that pays attention to this
+# switch runs quickly.
+FETCH_PLAYERDATA=True
+
+# As of October 2019 the playerdata.js file does not contain
+# the source for flag images. These URLs can't be determined
+# from the member's name. This switch controls whether the
+# code will
+# 1. Load each member's page.
+# 2. Parse that page looking for the member's flag.
+# This process takes some time since it has to load each member's
+# member page.
+FETCH_FLAGDATA=False
+
+# If the FETCH_FLAGDATA switch is True then this swich controls
+# how many sets of member data will be loaded before the code
+# pauses.
+FETCH_BATCH=10
+
+# How many seconds to pause after each batch.
+FETCH_SLEEP=3
+
+# If LIMIT_FETCH is true then only LIMIT_FETCH_COUNT number of member
+# data will be fetched. This is primarily used for testing instead
+# of loading the X0,000 member records.
+LIMIT_FETCH=True
+LIMIT_FETCH_COUNT=40
+
+# How many pages of member sets should be output in the HTML menus and pages.
+NUMBER_OF_PAGES=20
+
+# Should we actually download the member images?
+FETCH_IMAGES = True
