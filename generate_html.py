@@ -18,7 +18,8 @@ from requests.exceptions import HTTPError
 
 # https://dev.to/ssbozy/python-requests-with-retries-4p03
 from requests.packages.urllib3.util.retry import Retry
-from time import time, sleep
+from time import time, sleep, strftime
+from datetime import datetime
 
 import numpy as np
 
@@ -501,7 +502,8 @@ class FetchAndParseMembers:
 
         # Generate players.js file.
         print('Generating js/players.js file.')
-        player_js_output = 'var members = [];\n'
+        player_js_output = 'var generated = "{}";\n'.format(datetime.now().strftime('%d-%b-%Y'))
+        player_js_output += 'var members = [];\n'
         page_counter = 1
         members_per_page = math.floor(len(member_data)/self.NUMBER_OF_PAGES)
         i = 0
