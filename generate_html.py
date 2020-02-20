@@ -216,7 +216,7 @@ class FetchAndParseMembers:
             sections = playerdata.text
 
             # playerdata.js file is javascript that powers the search functionality
-            # when logged into learnedleague.com. As of the end of LL82 the file
+            # when logged into learnedleague.com. As of the end of LL84 the file
             # three javascript objects of identical length. We need to conver these to
             # python objects.
             # Match starts on the 'var' line in the javascript...
@@ -250,7 +250,7 @@ class FetchAndParseMembers:
                     elif match_parse[match_num] == 'playerDescriptions':
                         raw_player_descriptions = match.group(group_num).split('\n')
                     elif match_parse[match_num] == 'playerFlags':
-                        # as of the end of LL82 this is empty
+                        # as of the end of LL84 this is empty
                         raw_player_flags = match.group(group_num).split('\n')
                     else:
                         print('Couldn\'t find data structures in scripts/playerdata.js')
@@ -310,7 +310,7 @@ class FetchAndParseMembers:
         if self.LIMIT_FETCH:
             player_list = player_list[0:self.LIMIT_FETCH_COUNT]
 
-        # As of the end of LL82 the playerdata.js file does not contain the URL of the member's
+        # As of the end of LL84 the playerdata.js file does not contain the URL of the member's
         # flag (although there is a placeholder for it.)
         # Do we need to fetch the flag URL for each member?
         if self.FETCH_FLAGDATA == True:
