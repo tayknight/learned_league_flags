@@ -65,7 +65,7 @@ function BuildPageDescription() {
     fl = GetFirstAndLast();
     first_name = fl[page_num - 1]['first']['memberName'];
     last_name = fl[page_num - 1]['last']['memberName'];
-    $("#page_number").text("Page " + page_num + ": " + first_name + " through " + last_name + ".");
+    $(".page_number").text("Page " + page_num + ": " + first_name + " through " + last_name + ".");
 }
 
 function BuildFlags(results) {
@@ -76,7 +76,7 @@ function BuildFlags(results) {
     $.each(results, function(index, value){
         flags_string += '\t\t<div class="col-sm bg-white align-items-end m-2 p-2 border border-secondary">\n';
         flags_string += '\t\t\t<a href="' + value['memberLink'] + '" class="flag">\n';
-        flags_string += '\t\t\t\t<img src="/ll/images/loading.png" data-src="' + value['flagUrl'] + '" class="flagimg" width="154" height="87" title="' + value['memberName'] + '" alt="' + value['memberName'] + '">\n';
+        flags_string += '\t\t\t\t<img src="./images/loading.png" data-src="' + value['flagUrl'] + '" class="flagimg" width="154px" height="87px" title="' + value['memberName'] + '" alt="' + value['memberName'] + '">\n';
         flags_string += '\t\t\t</a><br />' + value['memberName'] + '\n';
         flags_string += '\t\t</div>\n';
         if (col_counter == 4) {
@@ -97,7 +97,7 @@ function BuildMenu() {
     menu_members = GetFirstAndLast();
     toc_string = '';
     for(i=1; i <= menu_members.length; i++) {
-        toc_string += '\t\t\t\t<a class="dropdown-item" href="/ll/flag/' + i + '" id="page_nav_' + i + '">Page ' + i + ': ' + menu_members[i-1]['first']['memberName'] + ' through ' + menu_members[i-1]['last']['memberName'] + '</a>\n';
+        toc_string += '\t\t\t\t<a class="dropdown-item" href="./flag/' + i + '" id="page_nav_' + i + '">Page ' + i + ': ' + menu_members[i-1]['first']['memberName'] + ' through ' + menu_members[i-1]['last']['memberName'] + '</a>\n';
         toc_string += '\n';
     }
     page_menu_container = $('#page_menu');
@@ -105,6 +105,26 @@ function BuildMenu() {
 
     // When was the flag set fetched and generated.
     $('#refreshed').text('Generated ' + generated);
+
+    found_page = parseInt(GetPageNum());
+
+    // Append links to the bottom of the page
+    if (found_page > 1) {
+        previous_page = found_page - 1;
+        console.log('Setting previous page to ' + previous_page);
+        $('.previous_page_link').attr("href","./flag/" + previous_page);
+        $('.previous_page_link').text('Previous Page');
+    }
+    // else {
+    //     $('#previous_page_link').removeAttribute("href");
+    // }
+
+    if (found_page < menu_members.length) {
+        next_page = found_page + 1;
+        console.log('Setting next page to ' + next_page);
+        $('.next_page_link').attr("href","./flag/" + next_page);
+        $('.next_page_link').text('Next Page');
+    }
 }
 
 function DrawFlags() {
