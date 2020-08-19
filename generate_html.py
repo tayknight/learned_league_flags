@@ -61,21 +61,32 @@ class GetPersonalFlag(HTMLParser):
             # If we are processing with the href tag that has already been processed.
             if self.inhref:
                 if attrs[0][0] == 'src':
-                    if attrs[1][0] == 'width':
-                        # If the flag image is XL sized... The user's own flag should
-                        # be the only XL flag on their own page.
-                        if attrs[1][1] == '154':
-                            if attrs[4][0] == 'class':
-                                if attrs[4][1] == 'flagimg':
-                                    # Set the output member_name to the temp member_name set above.
-                                    self.result['member_id'] = self.temp_member_id
-                                    self.result['member_name'] = attrs[3][1]
+                    if len(attrs) == 3:
+                        if attrs[2][1] == 'flagimg profflag':
+                            self.result['member_id'] = self.temp_member_id
+                            self.result['member_name'] = attrs[1][1]
+                            # Set the output flag source.
+                            self.result['flag_src'] = attrs[0][1]
 
-                                    # Set the output flag source.
-                                    self.result['flag_src'] = attrs[0][1]
+                            # Set the found person so no more tags are processed.
+                            self.found_person = True
 
-                                    # Set the found person so no more tags are processed.
-                                    self.found_person = True
+
+                    # if attrs[1][0] == 'width':
+                    #     # If the flag image is XL sized... The user's own flag should
+                    #     # be the only XL flag on their own page.
+                    #     if attrs[1][1] == '154':
+                    #         if attrs[4][0] == 'class':
+                    #             if attrs[4][1] == 'flagimg':
+                    #                 # Set the output member_name to the temp member_name set above.
+                    #                 self.result['member_id'] = self.temp_member_id
+                    #                 self.result['member_name'] = attrs[3][1]
+
+                    #                 # Set the output flag source.
+                    #                 self.result['flag_src'] = attrs[0][1]
+
+                    #                 # Set the found person so no more tags are processed.
+                    #                 self.found_person = True
 
 class FetchAndParseMembers:
     INPUTDATA = 'logindata.ini'
@@ -217,7 +228,7 @@ class FetchAndParseMembers:
 
             # playerdata.js file is javascript that powers the search functionality
             # when logged into learnedleague.com. As of the end of LL84 the file
-            # three javascript objects of identical length. We need to conver these to
+            # three javascript objects of identical length. We need to convert these to
             # python objects.
             # Match starts on the 'var' line in the javascript...
             # var playerNames = new Array(
@@ -387,7 +398,7 @@ class FetchAndParseMembers:
             # Pickle these complete player objects.
             with open(Path('pickles', 'members.pkl'), 'wb') as f:
                 pickle.dump(results, f)
-    
+
     def fetch_flag_images(self):
         # load member data
         if Path('pickles', 'members.pkl').is_file():
@@ -472,7 +483,7 @@ class FetchAndParseMembers:
         success = 0
         for r in small_results:
             results.append(r.get())
-        
+
         for result in results:
             result = r.get()
             if result['status'] == 'fail':
@@ -486,7 +497,7 @@ class FetchAndParseMembers:
                 missing += 1
             else:
                 success += 1
-        
+
         print('Success:   {}'.format(success))
         print('HTTP fail: {}'.format(httpfail))
         print('Missing:   {}'.format(missing))
