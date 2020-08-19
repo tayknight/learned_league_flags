@@ -9,6 +9,14 @@ verify_ssl = true
 requests = "*"
 pandas = "*"
 pylint = "*"
+scipy = "*"
+scikit-learn = "*"
+matplotlib = "*"
+jupyter = "*"
+opencv-contrib-python = "*"
+scikit-image = "*"
+gif2numpy = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.7"

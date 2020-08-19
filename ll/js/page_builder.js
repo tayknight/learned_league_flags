@@ -102,6 +102,9 @@ function BuildMenu() {
     }
     page_menu_container = $('#page_menu');
     page_menu_container.append(toc_string);
+
+    // When was the flag set fetched and generated.
+    $('#refreshed').text('Generated ' + generated);
 }
 
 function DrawFlags() {

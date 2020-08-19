@@ -7,7 +7,7 @@ csv/*
 ll/*
 logindata.ini
 *.pkl
-players.js
+/ll/js/players.js
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
